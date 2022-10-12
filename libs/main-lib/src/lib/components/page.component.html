@@ -1,0 +1,48 @@
+<div class="flex flex-col bg-white rounded-xxl w-full sm:w-128">
+  <form [formGroup]="form" novalidate class="my-8">
+    <div class="flex flex-row">
+      <div *ngFor="let type of messageTypes; let i = index">
+        <input
+          type="checkbox"
+          [value]="type.value"
+          (change)="onCheckboxChange($event)"
+        />
+        <span class="mr-4 ml-1">{{ type.name }}</span>
+      </div>
+    </div>
+    <input
+      formControlName="airports"
+      type="text"
+      class="mt-2 border border-gray-600 w-full p-2 outline outline-0"
+    />
+    <input
+      formControlName="countries"
+      type="text"
+      class="mt-2 border border-gray-600 w-full p-2 outline outline-0"
+    />
+  </form>
+
+  <p
+    class="text-red-500 font-semibold"
+    *ngIf="this.form.controls['types'].errors?.['required']"
+  >
+    Checkbox is required, select at least one value.
+  </p>
+
+  <button
+    (click)="submit()"
+    class="bg-gray-600 text-white py-2 px-4 my-2 mr-2 rounded hover:bg-gray-700 focus:outline-0"
+  >
+    Create briefing
+  </button>
+
+  <div class="mt-6">
+    <ngx-skeleton-loader
+      *ngIf="loading | async"
+      count="3"
+      [theme]="{ height: '24px', margin: 0 }"
+      class="hidden sm:block w-3/4"
+    ></ngx-skeleton-loader>
+    <div *ngIf="result | async as res">{{ res | json }}</div>
+  </div>
+</div>
