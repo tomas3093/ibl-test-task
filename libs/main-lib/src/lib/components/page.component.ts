@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
 import {
   FormArray,
   FormBuilder,
@@ -7,13 +7,14 @@ import {
   Validators,
 } from '@angular/forms';
 import { OpmetRes, ReportType } from '@ibl-test-task/api-interfaces';
-import { BehaviorSubject, tap } from 'rxjs';
+import { BehaviorSubject, combineLatest, map, tap } from 'rxjs';
 import { ErrorType } from '../enums/error-type.enum';
 import { ApiService } from '../services/api.service';
 
 @Component({
   selector: 'itt-page',
   templateUrl: './page.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PageComponent {
   form: FormGroup;
@@ -44,19 +45,8 @@ export class PageComponent {
     { name: 'SIGMET', value: ReportType.SIGMET },
   ];
 
-  get formTypes() {
-    return this.form.get('types') as FormArray;
-  }
-
-  get formAirports() {
-    return this.form.get('airports');
-  }
-
-  get formCountries() {
-    return this.form.get('countries');
-  }
-
   onCheckboxChange(e: any) {
+    this.formReset();
     const types: FormArray = this.form.get('types') as FormArray;
     if (e.target.checked) {
       types.push(new FormControl(e.target.value));
@@ -75,7 +65,7 @@ export class PageComponent {
   submit() {
     this.submited.next(true);
 
-    if (this.formAirports?.errors?.['required']) {
+    if (this.formTypes?.errors?.['required']) {
       this.error.next(ErrorType.TYPES_EMPTY);
       return;
     }
@@ -120,5 +110,63 @@ export class PageComponent {
         })
       )
       .subscribe();
+  }
+
+  formReset() {
+    this.error.next(null);
+  }
+
+  get showError() {
+    return combineLatest([this.error, this.submited, this.loading]).pipe(
+      map(([x, y, z]) => x != null && y && !z)
+    );
+  }
+
+  get showTypesEmptyError() {
+    return combineLatest([this.showError, this.error]).pipe(
+      map(([x, y]) => x && y === ErrorType.TYPES_EMPTY)
+    );
+  }
+
+  get showAirportsEmptyError() {
+    return this.error.pipe(map((x) => x === ErrorType.AIRPORTS_EMPTY));
+  }
+
+  get showAirportsPatternError() {
+    return this.error.pipe(map((x) => x === ErrorType.AIRPORTS_PATTERN));
+  }
+
+  get showCountriesEmptyError() {
+    return this.error.pipe(map((x) => x === ErrorType.COUNTRIES_EMPTY));
+  }
+
+  get showCountriesPatternError() {
+    return this.error.pipe(map((x) => x === ErrorType.COUNTRIES_PATTERN));
+  }
+
+  get showAirportsFieldInvalid() {
+    return combineLatest([
+      this.showAirportsEmptyError,
+      this.showAirportsPatternError,
+    ]).pipe(map(([x, y]) => x || y));
+  }
+
+  get showCountriesFieldInvalid() {
+    return combineLatest([
+      this.showCountriesEmptyError,
+      this.showCountriesPatternError,
+    ]).pipe(map(([x, y]) => x || y));
+  }
+
+  get formTypes() {
+    return this.form.get('types') as FormArray;
+  }
+
+  get formAirports() {
+    return this.form.get('airports');
+  }
+
+  get formCountries() {
+    return this.form.get('countries');
   }
 }
