@@ -1,0 +1,20 @@
+{
+  "layout": {
+    "title": "IBL Test App",
+    "description": "Meteorological airport briefings search for pilots"
+  },
+  "form": {
+    "reportTypes": "Message Types",
+    "airports": "Airports",
+    "countries": "Countries",
+    "btn": "Create briefing"
+  },
+  "error": {
+    "typesEmpty": "Message type is required, select at least one value.",
+    "airportsCountriesEmpty": "You need to specify at least one of the fields: Countries, Airports.",
+    "airportsPattern": "Airports is in wrong format, value should consist of 4 uppercase letters. Multiple values must be separated with space.",
+    "countriesPattern": "Countries is in wrong format, value should consist of 2 uppercase letters. Multiple values must be separated with space.",
+    "noResults": "No results for specified criteria",
+    "common": "Something went wrong"
+  }
+}

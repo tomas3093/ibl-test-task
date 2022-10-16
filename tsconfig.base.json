@@ -16,7 +16,9 @@
     "baseUrl": ".",
     "paths": {
       "@ibl-test-task/api-interfaces": ["libs/api-interfaces/src/index.ts"],
-      "@ibl-test-task/main-lib": ["libs/main-lib/src/index.ts"]
+      "@ibl-test-task/main-lib": ["libs/main-lib/src/index.ts"],
+      "@ibl-test-task/translate": ["libs/translate/src/index.ts"],
+      "@ibl-test-task/util": ["libs/util/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "tmp"]

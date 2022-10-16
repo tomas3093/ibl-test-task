@@ -7,8 +7,9 @@ import {
   Validators,
 } from '@angular/forms';
 import { ReportType } from '@ibl-test-task/api-interfaces';
+import { highlightHTML } from '@ibl-test-task/util';
 import { isEmpty } from 'lodash';
-import { BehaviorSubject, combineLatest, map, tap } from 'rxjs';
+import { BehaviorSubject, catchError, combineLatest, map, of, tap } from 'rxjs';
 import { ErrorType } from '../enums/error-type.enum';
 import { ApiService } from '../services/api.service';
 
@@ -79,18 +80,16 @@ export class PageComponent {
       return;
     }
 
-    if (this.formAirports?.errors?.['required']) {
-      this.error.next(ErrorType.AIRPORTS_EMPTY);
+    if (
+      this.formAirports?.errors?.['required'] &&
+      this.formCountries?.errors?.['required']
+    ) {
+      this.error.next(ErrorType.AIRPORTS_COUNTRIES_EMPTY);
       return;
     }
 
     if (this.formAirports?.errors?.['pattern']) {
       this.error.next(ErrorType.AIRPORTS_PATTERN);
-      return;
-    }
-
-    if (this.formCountries?.errors?.['required']) {
-      this.error.next(ErrorType.COUNTRIES_EMPTY);
       return;
     }
 
@@ -102,20 +101,34 @@ export class PageComponent {
     this.loading.next(true);
     this.result.next(null);
 
+    const airports =
+      this.form.value.airports.trim().length > 0
+        ? this.form.value.airports.trim().split(' ')
+        : undefined;
+    const countries =
+      this.form.value.countries.trim().length > 0
+        ? this.form.value.countries.trim().split(' ')
+        : undefined;
+
     const values: {
       types: ReportType[];
       airports: string[];
       countries: string[];
     } = {
       types: this.form.value.types,
-      airports: this.form.value.airports.trim().split(' '),
-      countries: this.form.value.countries.trim().split(' '),
+      airports,
+      countries,
     };
     this.api
       .getData(values.types, values.airports, values.countries)
       .pipe(
         tap((x) => {
           this.loading.next(false);
+
+          if (!(x && x.result)) {
+            this.error.next(ErrorType.COMMON);
+            return;
+          }
 
           // Transformation
           const transformedData: DataItem = x.result.reduce((acc, cur) => {
@@ -133,7 +146,7 @@ export class PageComponent {
                 {
                   queryType: cur.queryType,
                   reportTime: cur.reportTime,
-                  text: cur.text,
+                  text: highlightHTML(cur.text),
                 },
               ],
             };
@@ -145,6 +158,12 @@ export class PageComponent {
           if (isEmpty(transformedData)) {
             this.error.next(ErrorType.NO_RESULTS);
           }
+        }),
+        catchError((x) => {
+          this.loading.next(false);
+          this.error.next(ErrorType.COMMON);
+          console.error(x);
+          return of(null);
         })
       )
       .subscribe();
@@ -164,9 +183,8 @@ export class PageComponent {
         ([x, y, z]) =>
           x !== null &&
           [
-            ErrorType.AIRPORTS_EMPTY,
+            ErrorType.AIRPORTS_COUNTRIES_EMPTY,
             ErrorType.AIRPORTS_PATTERN,
-            ErrorType.COUNTRIES_EMPTY,
             ErrorType.COUNTRIES_PATTERN,
             ErrorType.TYPES_EMPTY,
           ].includes(x) &&
@@ -182,16 +200,14 @@ export class PageComponent {
     );
   }
 
-  get showAirportsEmptyError() {
-    return this.error.pipe(map((x) => x === ErrorType.AIRPORTS_EMPTY));
+  get showAirportsCountriesEmptyError() {
+    return this.error.pipe(
+      map((x) => x === ErrorType.AIRPORTS_COUNTRIES_EMPTY)
+    );
   }
 
   get showAirportsPatternError() {
     return this.error.pipe(map((x) => x === ErrorType.AIRPORTS_PATTERN));
-  }
-
-  get showCountriesEmptyError() {
-    return this.error.pipe(map((x) => x === ErrorType.COUNTRIES_EMPTY));
   }
 
   get showCountriesPatternError() {
@@ -200,14 +216,14 @@ export class PageComponent {
 
   get showAirportsFieldInvalid() {
     return combineLatest([
-      this.showAirportsEmptyError,
+      this.showAirportsCountriesEmptyError,
       this.showAirportsPatternError,
     ]).pipe(map(([x, y]) => x || y));
   }
 
   get showCountriesFieldInvalid() {
     return combineLatest([
-      this.showCountriesEmptyError,
+      this.showAirportsCountriesEmptyError,
       this.showCountriesPatternError,
     ]).pipe(map(([x, y]) => x || y));
   }
@@ -218,6 +234,12 @@ export class PageComponent {
         ([err, submited, loading]) =>
           err === ErrorType.NO_RESULTS && submited && !loading
       )
+    );
+  }
+
+  get showCommonError() {
+    return combineLatest([this.error, this.loading]).pipe(
+      map(([err, loading]) => err === ErrorType.COMMON && !loading)
     );
   }
 

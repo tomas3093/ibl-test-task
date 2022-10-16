@@ -1,0 +1,27 @@
+{
+  "name": "translate",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "library",
+  "sourceRoot": "libs/translate/src",
+  "prefix": "ibl-test-task",
+  "targets": {
+    "test": {
+      "executor": "@nrwl/jest:jest",
+      "outputs": ["coverage/libs/translate"],
+      "options": {
+        "jestConfig": "libs/translate/jest.config.ts",
+        "passWithNoTests": true
+      }
+    },
+    "lint": {
+      "executor": "@nrwl/linter:eslint",
+      "options": {
+        "lintFilePatterns": [
+          "libs/translate/**/*.ts",
+          "libs/translate/**/*.html"
+        ]
+      }
+    }
+  },
+  "tags": []
+}

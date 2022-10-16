@@ -7,7 +7,7 @@
     class="grid grid-cols-1 md:grid-cols-8 gap-y-1 md:gap-y-4 px-4"
   >
     <div class="md:col-span-2 text-sm md:text-base text-gray-700 self-center">
-      Message Types
+      {{ 'form.reportTypes' | transloco }}
     </div>
     <div class="md:col-span-6 flex flex-row">
       <div *ngFor="let type of messageTypes; let i = index" class="mr-4">
@@ -29,7 +29,7 @@
     <div
       class="md:col-span-2 mt-3 md:mt-0 text-sm md:text-base text-gray-700 self-center"
     >
-      Airports
+      {{ 'form.airports' | transloco }}
     </div>
     <input
       formControlName="airports"
@@ -38,12 +38,12 @@
       [ngClass]="{
         'outline outline-2 outline-red-500': showAirportsFieldInvalid | async
       }"
-      class="md:col-span-6 border border-gray-600 rounded w-full p-2 outline outline-0"
+      class="md:col-span-6 border border-gray-600 rounded w-full p-2 focus:outline-0"
     />
     <div
       class="md:col-span-2 mt-3 md:mt-0 text-sm md:text-base text-gray-700 self-center"
     >
-      Countries
+      {{ 'form.countries' | transloco }}
     </div>
     <input
       formControlName="countries"
@@ -52,7 +52,7 @@
       [ngClass]="{
         'outline outline-2 outline-red-500': showCountriesFieldInvalid | async
       }"
-      class="md:col-span-6 border border-gray-600 rounded w-full p-2 outline outline-0"
+      class="md:col-span-6 border border-gray-600 rounded w-full p-2 focus:outline-0"
     />
   </form>
 
@@ -60,19 +60,18 @@
     *ngIf="showValidationError | async"
     class="mt-4 px-4 text-red-500 font-semibold"
   >
-    <span *ngIf="showTypesEmptyError | async"
-      >Message type is required, select at least one value.</span
-    >
-    <span *ngIf="showAirportsEmptyError | async">Airports is required.</span>
-    <span *ngIf="showAirportsPatternError | async"
-      >Airports is in wrong format, value should consist of 4 uppercase letters.
-      Multiple values must be separated with space.</span
-    >
-    <span *ngIf="showCountriesEmptyError | async">Countries is required.</span>
-    <span *ngIf="showCountriesPatternError | async"
-      >Countries is in wrong format, value should consist of 2 uppercase
-      letters. Multiple values must be separated with space.</span
-    >
+    <span *ngIf="showTypesEmptyError | async">{{
+      'error.typesEmpty' | transloco
+    }}</span>
+    <span *ngIf="showAirportsCountriesEmptyError | async">{{
+      'error.airportsCountriesEmpty' | transloco
+    }}</span>
+    <span *ngIf="showAirportsPatternError | async">{{
+      'error.airportsPattern' | transloco
+    }}</span>
+    <span *ngIf="showCountriesPatternError | async">{{
+      'error.countriesPattern' | transloco
+    }}</span>
   </div>
 
   <button
@@ -80,7 +79,7 @@
     (click)="submit()"
     class="bg-gray-600 text-white py-2 px-6 mt-6 mx-4 rounded md:ml-auto hover:bg-gray-700 focus:outline-0"
   >
-    Create briefing
+    {{ 'form.btn' | transloco }}
   </button>
 
   <ng-container>
@@ -105,7 +104,13 @@
       *ngIf="showNoResult | async"
       class="mt-4 px-4 text-orange-500 font-semibold"
     >
-      No results for specified criteria
+      {{ 'error.noResults' | transloco }}
+    </div>
+    <div
+      *ngIf="showCommonError | async"
+      class="mt-4 px-4 text-red-500 font-semibold"
+    >
+      {{ 'error.common' | transloco }}
     </div>
     <div *ngIf="result | async as res" class="mt-6 px-4">
       <table
@@ -119,7 +124,7 @@
         <tr *ngFor="let item of res[stationId]; let i = index" class="px-4">
           <td class="px-2">{{ res[stationId][i].queryType }}</td>
           <td>{{ res[stationId][i].reportTime | date: 'short' }}</td>
-          <td class="px-2">{{ res[stationId][i].text }}</td>
+          <td [innerHTML]="res[stationId][i].text" class="px-2"></td>
         </tr>
       </table>
     </div>
