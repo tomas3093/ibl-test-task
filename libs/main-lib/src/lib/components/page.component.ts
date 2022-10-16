@@ -6,10 +6,19 @@ import {
   FormGroup,
   Validators,
 } from '@angular/forms';
-import { OpmetRes, ReportType } from '@ibl-test-task/api-interfaces';
+import { ReportType } from '@ibl-test-task/api-interfaces';
+import { isEmpty } from 'lodash';
 import { BehaviorSubject, combineLatest, map, tap } from 'rxjs';
 import { ErrorType } from '../enums/error-type.enum';
 import { ApiService } from '../services/api.service';
+
+interface DataItem {
+  [stationId: string]: {
+    queryType: string;
+    reportTime: string;
+    text: string;
+  }[];
+}
 
 @Component({
   selector: 'itt-page',
@@ -23,7 +32,7 @@ export class PageComponent {
   submited = new BehaviorSubject<boolean>(false);
   loading = new BehaviorSubject<boolean>(false);
 
-  result = new BehaviorSubject<OpmetRes | null>(null);
+  result = new BehaviorSubject<DataItem | null>(null);
 
   constructor(private fb: FormBuilder, private api: ApiService) {
     this.form = this.fb.group({
@@ -91,6 +100,7 @@ export class PageComponent {
     }
 
     this.loading.next(true);
+    this.result.next(null);
 
     const values: {
       types: ReportType[];
@@ -106,7 +116,35 @@ export class PageComponent {
       .pipe(
         tap((x) => {
           this.loading.next(false);
-          this.result.next({ id: x.id, error: x.error, result: x.result });
+
+          // Transformation
+          const transformedData: DataItem = x.result.reduce((acc, cur) => {
+            if (
+              isEmpty(acc) ||
+              acc[cur.stationId as keyof typeof acc] == null
+            ) {
+              acc = { ...acc, [cur.stationId]: [] };
+            }
+
+            acc = {
+              ...acc,
+              [cur.stationId]: [
+                ...acc[cur.stationId as keyof typeof acc],
+                {
+                  queryType: cur.queryType,
+                  reportTime: cur.reportTime,
+                  text: cur.text,
+                },
+              ],
+            };
+
+            return acc;
+          }, {});
+
+          this.result.next(transformedData);
+          if (isEmpty(transformedData)) {
+            this.error.next(ErrorType.NO_RESULTS);
+          }
         })
       )
       .subscribe();
@@ -116,14 +154,30 @@ export class PageComponent {
     this.error.next(null);
   }
 
-  get showError() {
+  objectKeys(o: any) {
+    return Object.keys(o);
+  }
+
+  get showValidationError() {
     return combineLatest([this.error, this.submited, this.loading]).pipe(
-      map(([x, y, z]) => x != null && y && !z)
+      map(
+        ([x, y, z]) =>
+          x !== null &&
+          [
+            ErrorType.AIRPORTS_EMPTY,
+            ErrorType.AIRPORTS_PATTERN,
+            ErrorType.COUNTRIES_EMPTY,
+            ErrorType.COUNTRIES_PATTERN,
+            ErrorType.TYPES_EMPTY,
+          ].includes(x) &&
+          y &&
+          !z
+      )
     );
   }
 
   get showTypesEmptyError() {
-    return combineLatest([this.showError, this.error]).pipe(
+    return combineLatest([this.showValidationError, this.error]).pipe(
       map(([x, y]) => x && y === ErrorType.TYPES_EMPTY)
     );
   }
@@ -156,6 +210,15 @@ export class PageComponent {
       this.showCountriesEmptyError,
       this.showCountriesPatternError,
     ]).pipe(map(([x, y]) => x || y));
+  }
+
+  get showNoResult() {
+    return combineLatest([this.error, this.submited, this.loading]).pipe(
+      map(
+        ([err, submited, loading]) =>
+          err === ErrorType.NO_RESULTS && submited && !loading
+      )
+    );
   }
 
   get formTypes() {

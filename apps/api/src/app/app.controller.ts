@@ -1,6 +1,6 @@
 import { Controller, Get } from '@nestjs/common';
 
-import { Message } from '@ibl-test-task/api-interfaces';
+import { OpmetRes } from '@ibl-test-task/api-interfaces';
 
 import { AppService } from './app.service';
 
@@ -8,8 +8,8 @@ import { AppService } from './app.service';
 export class AppController {
   constructor(private readonly appService: AppService) {}
 
-  @Get('hello')
-  getData(): Message {
+  @Get('data')
+  getData(): OpmetRes {
     return this.appService.getData();
   }
 }
